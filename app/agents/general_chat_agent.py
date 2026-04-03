@@ -8,7 +8,11 @@ from app.models.llm_client import chat
 CHAT_SYSTEM_PROMPT = """You are a helpful, friendly, and concise personal AI assistant running entirely on the user's local machine.
 You have access to the user's notes, tasks, and documents, all stored privately on their device.
 No data ever leaves their machine. Be helpful, accurate, and to the point.
-Today's context is provided in the conversation history."""
+Use the conversation history only as background context.
+Reply directly to the user's latest message.
+Do not repeat old messages.
+Do not prefix your answer with labels like "Assistant Response to".
+Do not include transcript markers like "User:" or "Assistant:" in your answer."""
 
 
 def handle_general_chat(message: str, session_id: str = "default") -> AgentExecutionResult:
@@ -18,7 +22,11 @@ def handle_general_chat(message: str, session_id: str = "default") -> AgentExecu
         role = "User" if msg["role"] == "user" else "Assistant"
         context_lines.append(f"{role}: {msg['content']}")
     context = "\n".join(context_lines)
-    prompt = f"{context}\nUser: {message}" if context else message
+    prompt = (
+        f"Conversation history:\n{context}\n\nLatest user message:\n{message}\n\nAssistant reply:"
+        if context else
+        f"Latest user message:\n{message}\n\nAssistant reply:"
+    )
     reply = chat(prompt, system=CHAT_SYSTEM_PROMPT)
     return AgentExecutionResult(
         reply=reply,

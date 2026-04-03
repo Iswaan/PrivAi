@@ -102,6 +102,14 @@ python -m venv venv
 venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
+### Preload the RAG Reranker
+
+This avoids a one-time delay on the first live document Q&A query by caching the cross-encoder up front.
+
+```powershell
+venv\Scripts\python.exe -c "from sentence_transformers import CrossEncoder; CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')"
+```
+
 ### Start Backend
 
 ```powershell

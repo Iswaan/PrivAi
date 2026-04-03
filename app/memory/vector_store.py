@@ -3,8 +3,8 @@ Vector Store — ChromaDB wrapper for document embeddings and semantic search.
 """
 import chromadb
 from chromadb.config import Settings
-from app.config import VECTORSTORE_DIR
-from app.models.embedder import embed, embed_single
+from app.config import RERANK_CANDIDATE_K, VECTORSTORE_DIR
+from app.models.embedder import embed, embed_single, rerank
 
 # ─── ChromaDB Client (persistent, local) ─────────────────────────────────────
 _client = None
@@ -67,9 +67,10 @@ def search(query: str, top_k: int = 4) -> list[dict]:
         return []
 
     query_embedding = embed_single(query)
+    candidate_k = min(max(top_k, RERANK_CANDIDATE_K), collection.count())
     results = collection.query(
         query_embeddings=[query_embedding],
-        n_results=min(top_k, collection.count()),
+        n_results=candidate_k,
     )
 
     output = []
@@ -79,7 +80,13 @@ def search(query: str, top_k: int = 4) -> list[dict]:
             "doc_id": results["metadatas"][0][i].get("doc_id", "unknown"),
             "score": 1 - results["distances"][0][i],  # cosine similarity
         })
-    return output
+
+    rerank_scores = rerank(query, [item["text"] for item in output])
+    for item, rerank_score in zip(output, rerank_scores):
+        item["rerank_score"] = float(rerank_score)
+
+    output.sort(key=lambda item: item["rerank_score"], reverse=True)
+    return output[: min(top_k, len(output))]
 
 
 def get_all_doc_ids() -> list[str]:
@@ -92,6 +99,11 @@ def get_all_doc_ids() -> list[str]:
     for meta in results["metadatas"]:
         doc_ids.add(meta.get("doc_id", "unknown"))
     return list(doc_ids)
+
+
+def delete_doc_chunks(doc_id: str):
+    """Remove all chunks for a given document ID."""
+    _delete_doc_chunks(doc_id)
 
 
 def _delete_doc_chunks(doc_id: str):

@@ -15,7 +15,7 @@ from app.config import API_HOST, API_PORT, DOCUMENTS_DIR
 from app.memory.conversation import add_message, clear_history, get_history
 from app.storage.database import init_db
 from app.storage.file_manager import list_documents, save_uploaded_file
-from app.tools.rag_engine import answer_query, index_document, list_indexed_documents
+from app.tools.rag_engine import answer_query, index_document, list_indexed_documents, remove_indexed_document
 from app.tools.scheduler import create_task, delete_task, get_all_tasks, update_task, update_task_status
 from app.tools.summarizer import summarize_file
 
@@ -171,6 +171,14 @@ async def query_documents(req: QueryRequest):
 @app.get("/documents/indexed")
 def get_indexed():
     return list_indexed_documents()
+
+
+@app.delete("/documents/{doc_id}")
+def delete_indexed_document(doc_id: str):
+    removed = remove_indexed_document(doc_id)
+    if not removed:
+        raise HTTPException(status_code=404, detail="Document not found")
+    return {"message": f"'{doc_id}' deleted successfully"}
 
 
 @app.get("/history/{session_id}")

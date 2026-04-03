@@ -32,6 +32,7 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     border-right: 1px solid rgba(99,102,241,0.2);
 }
 [data-testid="stSidebar"] * { color: #e2e8f0 !important; }
+[data-testid="stSidebarNav"] { display: none !important; }
 
 /* Cards */
 .card {

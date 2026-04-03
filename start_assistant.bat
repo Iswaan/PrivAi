@@ -19,6 +19,16 @@ if not exist "venv\Scripts\activate.bat" (
     exit /b
 )
 
+:: Pre-download the reranker model so the first RAG query does not stall
+echo [0/3] Checking local reranker model cache...
+venv\Scripts\python.exe -c "from sentence_transformers import CrossEncoder; CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')"
+if errorlevel 1 (
+    echo [ERROR] Failed to pre-load the reranker model.
+    echo Please verify your Python dependencies and internet connection, then try again.
+    pause
+    exit /b
+)
+
 :: Start Ollama in background
 echo [1/3] Starting Ollama LLM server...
 start "" /min cmd /c "ollama serve"

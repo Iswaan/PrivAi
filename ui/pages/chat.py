@@ -3,11 +3,11 @@ Chat page with intent labels and agent handoff tracing.
 """
 import httpx
 import streamlit as st
+from uuid import uuid4
 
 from app.config import API_HOST, API_PORT
 
 API_BASE = f"http://{API_HOST}:{API_PORT}"
-SESSION_ID = "main_session"
 
 INTENT_LABELS = {
     "summarize": ("Summarize", "#f59e0b"),
@@ -20,6 +20,9 @@ INTENT_LABELS = {
 
 
 def render_chat_page():
+    if "chat_session_id" not in st.session_state:
+        st.session_state.chat_session_id = f"chat_{uuid4().hex}"
+
     st.markdown(
         """
     <h1 style="font-size:2rem; margin-bottom:0.2rem;">Chat with Your AI</h1>
@@ -61,7 +64,7 @@ def render_chat_page():
         if st.button("Clear", key="clear_chat"):
             st.session_state.messages = []
             try:
-                httpx.delete(f"{API_BASE}/history/{SESSION_ID}", timeout=5)
+                httpx.delete(f"{API_BASE}/history/{st.session_state.chat_session_id}", timeout=5)
             except Exception:
                 pass
             st.rerun()
@@ -101,7 +104,7 @@ def _send_message(prompt: str):
             try:
                 resp = httpx.post(
                     f"{API_BASE}/chat",
-                    json={"message": prompt, "session_id": SESSION_ID},
+                    json={"message": prompt, "session_id": st.session_state.chat_session_id},
                     timeout=120,
                 )
                 data = resp.json()

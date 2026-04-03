@@ -3,6 +3,15 @@ echo "============================================"
 echo "  PAI Assistant - Privacy-Preserving AI"
 echo "============================================"
 
+# Pre-download the reranker model so the first RAG query does not stall
+echo "[0/3] Checking local reranker model cache..."
+source venv/bin/activate
+python -c "from sentence_transformers import CrossEncoder; CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')" || {
+  echo "[ERROR] Failed to pre-load the reranker model."
+  echo "Please verify your Python dependencies and internet connection, then try again."
+  exit 1
+}
+
 # Start Ollama
 echo "[1/3] Starting Ollama..."
 ollama serve &
@@ -10,7 +19,6 @@ sleep 3
 
 # Start FastAPI
 echo "[2/3] Starting FastAPI backend..."
-source venv/bin/activate
 uvicorn app.main:app --host 127.0.0.1 --port 8000 &
 sleep 3
 

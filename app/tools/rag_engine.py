@@ -4,11 +4,11 @@ Index documents once, query them anytime — fully local.
 """
 import os
 from datetime import datetime
-from app.memory.vector_store import add_chunks, search, get_all_doc_ids
-from app.storage.file_manager import extract_text, chunk_text
+from app.memory.vector_store import add_chunks, delete_doc_chunks, search, get_all_doc_ids
+from app.storage.file_manager import delete_document_file, extract_text, chunk_text
 from app.storage.database import SessionLocal, IndexedDocument
 from app.models.llm_client import chat
-from app.config import PRIMARY_MODEL, TOP_K_RESULTS
+from app.config import PRIMARY_MODEL, RERANK_TOP_K
 
 RAG_PROMPT = """You are a helpful assistant answering questions based strictly on the provided document context.
 If the answer is not in the context, say "I couldn't find that information in the indexed documents."
@@ -67,7 +67,7 @@ def answer_query(query: str, model: str = PRIMARY_MODEL) -> str:
     Answer a question using retrieved document chunks (RAG pipeline).
 
     Step 1: Embed query
-    Step 2: Find top-K similar chunks in ChromaDB
+    Step 2: Retrieve candidate chunks from ChromaDB and rerank them
     Step 3: Feed context + question to LLM
     Step 4: Return grounded answer
 
@@ -78,7 +78,7 @@ def answer_query(query: str, model: str = PRIMARY_MODEL) -> str:
     Returns:
         Answer string.
     """
-    results = search(query, top_k=TOP_K_RESULTS)
+    results = search(query, top_k=RERANK_TOP_K)
 
     if not results:
         return "No documents have been indexed yet. Please upload and index documents first."
@@ -108,3 +108,27 @@ def list_indexed_documents() -> list[dict]:
         ]
     finally:
         db.close()
+
+
+def remove_indexed_document(doc_id: str) -> bool:
+    """
+    Delete an indexed document from ChromaDB, SQLite, and local file storage.
+
+    Returns:
+        True when a document record existed and was removed, else False.
+    """
+    db = SessionLocal()
+    try:
+        record = db.query(IndexedDocument).filter(IndexedDocument.doc_id == doc_id).first()
+        if not record:
+            return False
+
+        filepath = record.filepath
+        db.delete(record)
+        db.commit()
+    finally:
+        db.close()
+
+    delete_doc_chunks(doc_id)
+    delete_document_file(filepath)
+    return True

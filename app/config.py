@@ -15,11 +15,14 @@ OLLAMA_BASE_URL = "http://127.0.0.1:11434"
 PRIMARY_MODEL = "phi3:mini"          # Main reasoning model
 FAST_MODEL = "tinyllama"             # Fast intent classification
 EMBEDDING_MODEL = "all-MiniLM-L6-v2"
+CROSS_ENCODER_MODEL = "cross-encoder/ms-marco-MiniLM-L-6-v2"
 
 # ─── RAG Settings ─────────────────────────────────────────────────────────────
 CHUNK_SIZE = 800          # tokens per chunk (approx characters/4)
 CHUNK_OVERLAP = 100
 TOP_K_RESULTS = 4         # How many chunks to retrieve
+RERANK_CANDIDATE_K = 10   # How many chunks to fetch before reranking
+RERANK_TOP_K = 3          # How many reranked chunks to keep for the LLM
 
 # ─── Privacy Settings ─────────────────────────────────────────────────────────
 ENABLE_ENCRYPTION = False            # Set True to encrypt stored files

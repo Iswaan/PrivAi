@@ -24,9 +24,10 @@ def test_add_chunks_returns_count(mock_get_col, mock_embed):
     mock_col.add.assert_called_once()
 
 
+@patch("app.memory.vector_store.rerank")
 @patch("app.memory.vector_store.embed_single")
 @patch("app.memory.vector_store._get_collection")
-def test_search_returns_empty_on_no_docs(mock_get_col, mock_embed):
+def test_search_returns_empty_on_no_docs(mock_get_col, mock_embed, mock_rerank):
     mock_col = MagicMock()
     mock_col.count.return_value = 0
     mock_get_col.return_value = mock_col
@@ -34,26 +35,35 @@ def test_search_returns_empty_on_no_docs(mock_get_col, mock_embed):
 
     results = search("What is AI?", top_k=4)
     assert results == []
+    mock_rerank.assert_not_called()
 
 
+@patch("app.memory.vector_store.rerank")
 @patch("app.memory.vector_store.embed_single")
 @patch("app.memory.vector_store._get_collection")
-def test_search_returns_results(mock_get_col, mock_embed):
+def test_search_returns_reranked_results(mock_get_col, mock_embed, mock_rerank):
     mock_col = MagicMock()
     mock_col.count.return_value = 5
     mock_col.query.return_value = {
-        "documents": [["Relevant text chunk"]],
-        "metadatas": [[{"doc_id": "test_doc", "chunk_index": 0}]],
-        "distances": [[0.1]],
+        "documents": [["Less relevant chunk", "Most relevant chunk"]],
+        "metadatas": [[
+            {"doc_id": "doc_a", "chunk_index": 0},
+            {"doc_id": "doc_b", "chunk_index": 1},
+        ]],
+        "distances": [[0.05, 0.2]],
     }
     mock_get_col.return_value = mock_col
     mock_embed.return_value = [0.1, 0.2, 0.3]
+    mock_rerank.return_value = [0.1, 0.95]
 
-    results = search("test query", top_k=1)
-    assert len(results) == 1
-    assert results[0]["text"] == "Relevant text chunk"
-    assert results[0]["doc_id"] == "test_doc"
-    assert results[0]["score"] == pytest.approx(0.9, abs=0.01)
+    results = search("test query", top_k=2)
+    assert len(results) == 2
+    assert results[0]["text"] == "Most relevant chunk"
+    assert results[0]["doc_id"] == "doc_b"
+    assert results[0]["score"] == pytest.approx(0.8, abs=0.01)
+    assert results[0]["rerank_score"] == pytest.approx(0.95, abs=0.01)
+    mock_col.query.assert_called_once()
+    assert mock_col.query.call_args.kwargs["n_results"] == 5
 
 
 # ─── Intent Detection Tests ───────────────────────────────────────────────────

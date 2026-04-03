@@ -90,6 +90,12 @@ def list_documents() -> list[dict]:
     return files
 
 
+def delete_document_file(filepath: str):
+    """Delete a stored document file if it still exists."""
+    if filepath and os.path.isfile(filepath):
+        os.remove(filepath)
+
+
 # ─── Private Helpers ──────────────────────────────────────────────────────────
 
 def _extract_pdf(filepath: str) -> str:

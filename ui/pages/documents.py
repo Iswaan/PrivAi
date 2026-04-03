@@ -77,19 +77,39 @@ def render_documents_page():
             st.info("📭 No documents indexed yet. Upload one above to get started.")
         else:
             for doc in docs:
-                st.markdown(f"""
-                <div class="card" style="padding:0.8rem 1.2rem;">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <div>
-                            <span style="font-weight:600; color:#818cf8;">📄 {doc.get('filename')}</span><br/>
-                            <span style="font-size:0.78rem; color:#94a3b8;">
-                                {doc.get('chunk_count', 0)} chunks indexed · {doc.get('indexed_at', '')[:10]}
-                            </span>
+                info_col, action_col = st.columns([5, 1])
+                with info_col:
+                    st.markdown(f"""
+                    <div class="card" style="padding:0.8rem 1.2rem;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <div>
+                                <span style="font-weight:600; color:#818cf8;">📄 {doc.get('filename')}</span><br/>
+                                <span style="font-size:0.78rem; color:#94a3b8;">
+                                    {doc.get('chunk_count', 0)} chunks indexed · {doc.get('indexed_at', '')[:10]}
+                                </span>
+                            </div>
+                            <span style="color:#10b981; font-size:0.8rem;">✅ Ready</span>
                         </div>
-                        <span style="color:#10b981; font-size:0.8rem;">✅ Ready</span>
                     </div>
-                </div>
-                """, unsafe_allow_html=True)
+                    """, unsafe_allow_html=True)
+                with action_col:
+                    st.write("")
+                    st.write("")
+                    if st.button("🗑️ Remove", key=f"remove_doc_{doc.get('doc_id')}", type="secondary"):
+                        try:
+                            resp = httpx.delete(f"{API_BASE}/documents/{doc.get('doc_id')}", timeout=60)
+                            if resp.status_code == 200:
+                                st.success(f"Removed {doc.get('filename')}")
+                                st.session_state.qa_history = [
+                                    item for item in st.session_state.get("qa_history", [])
+                                ]
+                                st.rerun()
+                            else:
+                                st.error(f"❌ Error: {resp.text}")
+                        except httpx.ConnectError:
+                            st.error("⚠️ Backend not running.")
+                        except Exception as e:
+                            st.error(str(e))
 
     # ── Tab 2: Ask Questions ───────────────────────────────────────────────
     with tab_qa:
