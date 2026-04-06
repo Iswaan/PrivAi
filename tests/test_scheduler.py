@@ -10,7 +10,7 @@ import pytest
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.storage.database import SessionLocal, Task, init_db
-from app.tools.scheduler import create_task, delete_task, get_all_tasks, update_task, update_task_status
+from app.tools.scheduler import create_task, delete_task, delete_task_by_name, get_all_tasks, update_task, update_task_status
 
 
 @pytest.fixture(autouse=True)
@@ -74,6 +74,13 @@ def test_delete_task():
     delete_task(task_id)
     tasks = get_all_tasks()
     assert len(tasks) == 0
+
+
+def test_delete_task_by_name_matches_natural_language_request():
+    _create_test_task("Submit report")
+    deleted = delete_task_by_name("can u delete the submit report task")
+    assert deleted == "Submit report"
+    assert get_all_tasks() == []
 
 
 @patch("app.tools.scheduler.chat")

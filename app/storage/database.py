@@ -49,6 +49,19 @@ class IndexedDocument(Base):
     indexed_at = Column(DateTime, default=datetime.utcnow)
 
 
+class SummaryRecord(Base):
+    __tablename__ = "summary_records"
+
+    id = Column(Integer, primary_key=True, index=True)
+    filename = Column(String(300), nullable=False)
+    detail_level = Column(String(20), nullable=False, default="standard")
+    format_type = Column(String(30), nullable=False, default="structured")
+    source_word_count = Column(Integer, default=0)
+    chunk_count = Column(Integer, default=0)
+    summary = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
 # ─── Init ─────────────────────────────────────────────────────────────────────
 
 def init_db():

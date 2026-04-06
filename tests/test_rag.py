@@ -82,6 +82,9 @@ def test_intent_query():
 def test_intent_list_tasks():
     assert _keyword_fallback("show my tasks list") == "list_tasks"
 
+def test_intent_delete_natural_language_request():
+    assert _keyword_fallback("can u delete the submit report task") == "delete_task"
+
 def test_intent_chat_fallback():
     assert _keyword_fallback("hello there") == "general_chat"
 

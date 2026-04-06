@@ -58,6 +58,8 @@ def render_summarizer_page():
         "For topic-wise and subtopic-wise output, use `detailed` with `structured` or `study_guide`."
     )
 
+    _render_summary_history()
+
     col1, col2 = st.columns([2, 1])
 
     if uploaded_file is not None:
@@ -127,6 +129,7 @@ def _run_summarization(uploaded_file, detail_level: str, format_type: str):
             payload = resp.json()
             summary = payload.get("summary", "No summary generated.")
             chunk_count = payload.get("chunk_count", "N/A")
+            source_word_count = payload.get("source_word_count", "N/A")
 
             st.success(f"Summary generated in {elapsed}s")
 
@@ -147,9 +150,10 @@ def _run_summarization(uploaded_file, detail_level: str, format_type: str):
             col2.metric("Summary Words", word_count)
             col3.metric("Chunks", chunk_count)
 
-            col4, col5 = st.columns(2)
+            col4, col5, col6 = st.columns(3)
             col4.metric("Detail", detail_level.title())
             col5.metric("Format", format_type.replace("_", " ").title())
+            col6.metric("Source Words", source_word_count)
 
             st.download_button(
                 "Download Summary",
@@ -164,3 +168,26 @@ def _run_summarization(uploaded_file, detail_level: str, format_type: str):
         st.error("Backend not running. Start it with: `uvicorn app.main:app --port 8000`")
     except Exception as exc:
         st.error(f"Unexpected error: {str(exc)}")
+
+
+def _render_summary_history():
+    st.markdown("### Summary History")
+
+    try:
+        resp = httpx.get(f"{API_BASE}/summaries", timeout=10)
+        history = resp.json() if resp.status_code == 200 else []
+    except Exception:
+        history = []
+
+    if not history:
+        st.info("No saved summaries yet. Generate one and it will appear here.")
+        return
+
+    for item in history:
+        created = (item.get("created_at") or "")[:19].replace("T", " ")
+        title = f"{item.get('filename', 'Untitled')} • {item.get('detail_level', 'standard').title()} • {item.get('format_type', 'structured').replace('_', ' ').title()}"
+        with st.expander(title):
+            st.caption(
+                f"Created: {created} | Chunks: {item.get('chunk_count', 0)} | Source words: {item.get('source_word_count', 0)}"
+            )
+            st.markdown(item.get("summary", ""))

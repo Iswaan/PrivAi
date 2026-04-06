@@ -144,9 +144,17 @@ def delete_task_by_name(message: str) -> str | None:
     db = SessionLocal()
     try:
         tasks = db.query(Task).filter(Task.status == "pending").all()
+        normalized_message = _normalize_task_text(message)
+        message_tokens = set(_significant_tokens(normalized_message))
+
         for task in tasks:
-            if task.task.lower() in message.lower() or any(
-                word in task.task.lower() for word in message.lower().split() if len(word) > 4
+            normalized_task = _normalize_task_text(task.task)
+            task_tokens = set(_significant_tokens(normalized_task))
+
+            if (
+                normalized_task and normalized_task in normalized_message
+            ) or (
+                task_tokens and task_tokens.issubset(message_tokens)
             ):
                 name = task.task
                 db.delete(task)
@@ -241,6 +249,24 @@ def _normalize_time(value: str | None) -> str | None:
     if 0 <= hour <= 23 and 0 <= minute <= 59:
         return f"{hour:02d}:{minute:02d}"
     return None
+
+
+def _normalize_task_text(value: str) -> str:
+    normalized = re.sub(r"[^a-z0-9\s]", " ", value.lower())
+    normalized = re.sub(r"\s+", " ", normalized).strip()
+    return normalized
+
+
+def _significant_tokens(value: str) -> list[str]:
+    stopwords = {
+        "can", "could", "please", "the", "a", "an", "my", "me", "to", "for",
+        "task", "tasks", "todo", "do", "u", "you", "this", "that", "delete",
+        "remove", "complete", "finish", "mark", "done", "as",
+    }
+    return [
+        token for token in value.split()
+        if len(token) > 2 and token not in stopwords
+    ]
 
 
 def _task_to_dict(task: Task) -> dict:

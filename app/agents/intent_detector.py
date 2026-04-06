@@ -64,7 +64,7 @@ def _keyword_fallback(message: str) -> str:
     msg = message.lower()
 
     # Strong, explicit task-management commands should win first.
-    if any(k in msg for k in ["delete task", "remove task", "done with", "complete task"]):
+    if _looks_like_delete_task_request(msg):
         return "delete_task"
     if any(k in msg for k in ["list tasks", "show tasks", "my tasks", "pending tasks", "to-do list"]):
         return "list_tasks"
@@ -175,6 +175,7 @@ def _intent_matches_message(intent: str, message: str) -> bool:
         ],
         "delete_task": [
             "delete task", "remove task", "complete task", "done with",
+            "delete the", "remove the", "delete my", "remove my",
         ],
         "general_chat": [],
     }
@@ -183,3 +184,16 @@ def _intent_matches_message(intent: str, message: str) -> bool:
         return True
 
     return any(signal in msg for signal in intent_signals.get(intent, []))
+
+
+def _looks_like_delete_task_request(msg: str) -> bool:
+    delete_verbs = ["delete", "remove", "complete", "finish", "mark done", "mark as done"]
+    task_markers = ["task", "tasks", "todo", "to-do", "reminder", "report", "assignment"]
+
+    if any(phrase in msg for phrase in ["delete task", "remove task", "done with", "complete task"]):
+        return True
+
+    has_delete_verb = any(verb in msg for verb in delete_verbs)
+    has_task_marker = any(marker in msg for marker in task_markers)
+
+    return has_delete_verb and has_task_marker

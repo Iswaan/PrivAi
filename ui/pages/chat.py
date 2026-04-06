@@ -3,11 +3,11 @@ Chat page with intent labels and agent handoff tracing.
 """
 import httpx
 import streamlit as st
-from uuid import uuid4
 
 from app.config import API_HOST, API_PORT
 
 API_BASE = f"http://{API_HOST}:{API_PORT}"
+DEFAULT_CHAT_SESSION_ID = "main_chat"
 
 INTENT_LABELS = {
     "summarize": ("Summarize", "#f59e0b"),
@@ -20,8 +20,8 @@ INTENT_LABELS = {
 
 
 def render_chat_page():
-    if "chat_session_id" not in st.session_state:
-        st.session_state.chat_session_id = f"chat_{uuid4().hex}"
+    session_id = _ensure_chat_session_id()
+    _hydrate_messages_from_backend(session_id)
 
     st.markdown(
         """
@@ -33,7 +33,7 @@ def render_chat_page():
         unsafe_allow_html=True,
     )
 
-    if "messages" not in st.session_state or not st.session_state.messages:
+    if not st.session_state.messages:
         st.markdown("**Try asking:**")
         cols = st.columns(3)
         examples = [
@@ -44,9 +44,6 @@ def render_chat_page():
         for idx, example in enumerate(examples):
             if cols[idx].button(f'"{example}"', key=f"ex_{idx}", use_container_width=True):
                 _send_message(example)
-
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
 
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
@@ -68,6 +65,47 @@ def render_chat_page():
             except Exception:
                 pass
             st.rerun()
+
+
+def _ensure_chat_session_id() -> str:
+    query_params = st.query_params
+    query_session_id = query_params.get("chat_session_id")
+
+    if query_session_id:
+        session_id = query_session_id
+    else:
+        session_id = DEFAULT_CHAT_SESSION_ID
+
+    st.session_state.chat_session_id = session_id
+    if query_params.get("chat_session_id") != session_id:
+        st.query_params["chat_session_id"] = session_id
+
+    return session_id
+
+
+def _hydrate_messages_from_backend(session_id: str):
+    if st.session_state.get("messages_loaded_for_session") == session_id:
+        if "messages" not in st.session_state:
+            st.session_state.messages = []
+        return
+
+    try:
+        resp = httpx.get(f"{API_BASE}/history/{session_id}", timeout=10)
+        if resp.status_code == 200:
+            history = resp.json()
+            st.session_state.messages = [
+                {
+                    "role": msg.get("role", "assistant"),
+                    "content": msg.get("content", ""),
+                }
+                for msg in history
+            ]
+        else:
+            st.session_state.messages = []
+    except Exception:
+        st.session_state.messages = st.session_state.get("messages", [])
+
+    st.session_state.messages_loaded_for_session = session_id
 
 
 def _render_intent_badge(intent: str):

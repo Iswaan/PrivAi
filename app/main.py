@@ -17,7 +17,7 @@ from app.storage.database import init_db
 from app.storage.file_manager import list_documents, save_uploaded_file
 from app.tools.rag_engine import answer_query, index_document, list_indexed_documents, remove_indexed_document
 from app.tools.scheduler import create_task, delete_task, get_all_tasks, update_task, update_task_status
-from app.tools.summarizer import summarize_file
+from app.tools.summarizer import list_summary_history, summarize_file
 
 
 @asynccontextmanager
@@ -104,19 +104,27 @@ async def summarize(
     try:
         result = summarize_file(
             saved_path,
+            filename=file.filename,
             detail_level=detail_level,
             format_type=format_type,
         )
         return {
+            "summary_id": result["summary_id"],
             "summary": result["summary"],
             "filename": file.filename,
             "chunk_count": result["chunk_count"],
             "time_seconds": result["time_seconds"],
             "detail_level": result["detail_level"],
             "format_type": result["format_type"],
+            "source_word_count": result["source_word_count"],
         }
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.get("/summaries")
+def get_summary_history():
+    return list_summary_history()
 
 
 @app.post("/tasks/create")
