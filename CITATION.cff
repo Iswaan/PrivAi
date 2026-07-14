@@ -1,0 +1,29 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "PrivAI: Privacy-First Local Multi-Agent AI Assistant"
+abstract: >
+  PrivAI is a fully local, privacy-preserving AI assistant built with a modular multi-agent
+  architecture. It runs entirely on-device using Ollama (Phi-3 Mini, TinyLlama), ChromaDB,
+  and SentenceTransformers. Features include multi-agent chat routing, document summarization,
+  natural language task management, and RAG-powered document Q&A. No cloud APIs, no data
+  leakage, with optional AES-256 encryption and differential privacy support.
+authors:
+  - name: "Iswaan"
+    affiliation: "Department of Computer Science and Engineering, College of Engineering and Computer Science, Wright State University, Fairborn, OH 45435, USA"
+repository-code: "https://github.com/Iswaan/PrivAI"
+license: MIT
+year: 2026
+keywords:
+  - privacy-preserving AI
+  - local LLM
+  - multi-agent system
+  - RAG
+  - ollama
+  - streamlit
+  - fastapi
+  - differential privacy
+  - document summarization
+  - task management
+  - chromadb
+  - on-device AI

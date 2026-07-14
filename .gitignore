@@ -1,15 +1,47 @@
+# ── Data (user's private data, never push) ─────────────────────────────────────
 data/
 data/documents/
 data/vectorstore/
 *.db
+
+# ── Python ─────────────────────────────────────────────────────────────────────
 __pycache__/
-*.pyc
+*.py[cod]
 *.pyo
-venv/
-.env
-*.enc
+*.pyd
+*.pyw
+*.egg-info/
 dist/
 build/
-*.spec
+
+# ── Virtual environment ─────────────────────────────────────────────────────────
+venv/
+.venv/
+env/
+ENV/
+
+# ── Environment / secrets ───────────────────────────────────────────────────────
+.env
+.env.local
+*.env
+*.enc
+
+# ── Logs (auto-generated at runtime) ───────────────────────────────────────────
+*.log
+backend.*.log
+ui.*.log
+
+# ── OS ──────────────────────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
+desktop.ini
+
+# ── IDE / Editor ────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── Distribution ────────────────────────────────────────────────────────────────
+*.spec
