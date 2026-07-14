@@ -10,9 +10,7 @@ abstract: >
   leakage, with optional AES-256 encryption and differential privacy support.
 authors:
   - name: "Iswaan"
-    affiliation: "Department of Computer Science and Engineering, College of Engineering and Computer Science, Wright State University, Fairborn, OH 45435, USA"
 repository-code: "https://github.com/Iswaan/PrivAI"
-license: MIT
 year: 2026
 keywords:
   - privacy-preserving AI
@@ -25,5 +23,4 @@ keywords:
   - differential privacy
   - document summarization
   - task management
-  - chromadb
   - on-device AI
